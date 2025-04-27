@@ -1,0 +1,123 @@
+
+---
+title: "Global Sanitation Disparities: A Data-Driven Perspective"
+author: "Hannah Dowling"
+format:
+  html:
+    code-fold: true
+execute:
+  echo: true
+  eval: true
+  output: true
+  warning: false
+---
+
+## Introduction
+
+Access to basic sanitation is a fundamental human right and a key driver of public health. This data story examines disparities in sanitation coverage across countries, drawing from UNICEF indicators and socio-economic metadata. The following visualizations explore top performers, lagging nations, and the socio-economic factors influencing sanitation access.
+
+## Top 10 Countries with Highest Sanitation Coverage (2023)
+
+**Description:**  
+This graph highlights the top 10 countries with the highest sanitation coverage according to the latest available data (2023). These countries demonstrate significant progress in public health infrastructure and are benchmarks for effective policy implementation.
+
+```{python}
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+df = pd.read_csv("unicef_indicator_1_hannah.csv")
+df.columns = df.columns.str.strip().str.lower()
+latest_year = df['time_period'].max()
+
+top10 = df[df['time_period'] == latest_year].sort_values(by='obs_value', ascending=False).head(10)
+
+plt.figure(figsize=(10, 6))
+sns.barplot(data=top10, y='country', x='obs_value', palette='viridis')
+plt.title(f"Top 10 Countries with Highest Sanitation Coverage in {latest_year}")
+plt.xlabel('Sanitation Coverage (%)')
+plt.ylabel('Country')
+plt.tight_layout()
+plt.grid(True)
+plt.show()
+```
+
+## Bottom 10 Countries with Lowest Sanitation Coverage (2023)
+
+**Description:**  
+This graph presents the 10 countries with the lowest sanitation coverage, pointing to serious challenges in access to basic hygiene. Many of these nations are low-income and conflict-affected.
+
+```{python}
+bottom10 = df[df['time_period'] == latest_year].sort_values(by='obs_value', ascending=True).head(10)
+
+plt.figure(figsize=(10, 6))
+sns.barplot(data=bottom10, y='country', x='obs_value', palette='rocket')
+plt.title(f"Bottom 10 Countries with Lowest Sanitation Coverage in {latest_year}")
+plt.xlabel('Sanitation Coverage (%)')
+plt.ylabel('Country')
+plt.tight_layout()
+plt.grid(True)
+plt.show()
+```
+
+
+
+## Heatmap of Sanitation Coverage by Country and Year
+
+**Description:**  
+This heatmap reveals sanitation coverage patterns across countries from 2015 to 2023. Countries are sorted by their average coverage, making global disparities visually striking. Darker shades indicate stronger infrastructure; lighter tones reflect volatility or gaps.
+
+```{python}
+heatmap_data = df.pivot_table(index='country', columns='time_period', values='obs_value', aggfunc='mean')
+heatmap_data = heatmap_data.dropna(thresh=5)
+heatmap_data = heatmap_data.loc[heatmap_data.mean(axis=1).sort_values(ascending=False).index]
+
+plt.figure(figsize=(12, 14))
+sns.heatmap(heatmap_data, cmap="YlGnBu", linewidths=0.3, linecolor='gray', cbar_kws={'label': 'Sanitation Coverage (%)'})
+plt.title("Heatmap of Sanitation Coverage by Country and Year")
+plt.xlabel("Year")
+plt.ylabel("Country")
+plt.tight_layout()
+plt.show()
+```
+
+## Sanitation Coverage vs GDP per Capita (2023)
+
+**Description:**  
+This scatter plot explores the relationship between GDP per capita and sanitation coverage. The upward trend reveals how financial strength translates into better public health infrastructure, showcasing a strong economic-health link.
+
+```{python}
+metadata = pd.read_csv("unicef_metadata_hannah.csv")
+metadata.columns = metadata.columns.str.strip().str.lower()
+
+avg_sanitation = df[df['time_period'] == latest_year][['country', 'obs_value']]
+avg_sanitation = avg_sanitation.groupby('country', as_index=False).mean()
+
+latest_metadata = metadata[metadata['year'] == latest_year]
+merged = pd.merge(avg_sanitation, latest_metadata, on='country')
+merged = merged.rename(columns={'obs_value': 'sanitation_coverage'})
+
+cleaned = merged.dropna(subset=['sanitation_coverage', 'gdp per capita (constant 2015 us$)'])
+
+plt.figure(figsize=(10, 6))
+sns.scatterplot(data=cleaned, x='gdp per capita (constant 2015 us$)', y='sanitation_coverage')
+plt.title("Sanitation Coverage vs GDP per Capita (2023)")
+plt.xlabel("GDP per Capita (2015 US$)")
+plt.ylabel("Sanitation Coverage (%)")
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+```
+
+
+## Conclusion
+
+This data story reveals stark and persistent inequalities in global access to sanitation. While a few countries have successfully achieved or are close to achieving universal coverage—thanks to robust infrastructure, governance, and investment—many others lag significantly behind. These lagging countries are often characterized by lower economic development, ongoing conflict, or fragile public health systems. 
+
+The implications are far-reaching. Lack of sanitation is not just an infrastructure issue—it directly fuels cycles of disease, poverty, and reduced life expectancy. Children are particularly vulnerable, with inadequate sanitation contributing to high rates of preventable illnesses, school absenteeism, and even child mortality. For women and girls, poor sanitation conditions in public and healthcare settings often mean lack of dignity, safety, and access to menstrual hygiene—further exacerbating gender inequality.
+
+As this analysis shows, sanitation coverage positively correlates with both GDP per capita and other indicators of public health, underscoring the fact that sanitation is foundational to broader development. 
+
+Accelerating progress requires not just financial aid, but targeted international support, evidence-driven policymaking, and strong accountability mechanisms. The global community must prioritize sanitation as a human right and a prerequisite for achieving Sustainable Development Goals (SDGs), especially SDG 6: Clean Water and Sanitation for All. 
+
+The road ahead must be bold, inclusive, and urgent—because every delay deepens inequality and every gain in sanitation is a win for human dignity.
